@@ -20,6 +20,9 @@ def main():
     args.add_argument("output", help="output directory")
     args.add_argument("--jobs", dest="jobs", default=None, type=int, help="number of threads (defaults to number of detected CPU cores)")
 
+    args.add_argument("--generator", dest="generator", default="AnonymousAlligator's import script", help="name of generator, to put in XML output")
+    args.add_argument("--changeset-tags", dest="changeset_tags", action="append", default=[], help="tags to add to changesets (format key=value)")
+
     args.add_argument("--addresses", dest="addresses", help="path to addresses shapefile")
     args.add_argument("--map-address-tag", dest="address_tag_maps", action="append", default=[], help="mapping of <osm tag>=<shapefile property>")
     args.add_argument("--add-address-tag", dest="address_tags", action="append", default=[], help="mapping of <osm tag>=<shapefile property>")
@@ -178,21 +181,24 @@ def main():
     print(f"Generated {len(tiles)} tiles and {len(warned_tiles)} warning tiles")
 
     with section("Generating files"):
+        changeset_tags = { tag.split("=", 1)[0]: tag.split("=", 1)[1] for tag in opts.changeset_tags }
+
         os.makedirs(os.path.join(opts.output, "changesets"), exist_ok=True)
         os.makedirs(os.path.join(opts.output, "warnings"), exist_ok=True)
 
         with Pool(opts.jobs) as p:
-            list(p.imap_unordered(PoolFunc(write_tile, os.path.join(opts.output, "changesets")), tiles.items()))
+            list(p.imap_unordered(PoolFunc(write_tile, os.path.join(opts.output, "changesets"), generator=opts.generator, changeset_tags=changeset_tags), tiles.items()))
 
         with Pool(opts.jobs) as p:
-            list(p.imap_unordered(PoolFunc(write_tile, os.path.join(opts.output, "warnings")), warned_tiles.items()))
+            list(p.imap_unordered(PoolFunc(write_tile, os.path.join(opts.output, "warnings"), generator=opts.generator, changeset_tags=changeset_tags), warned_tiles.items()))
 
     print("Done!")
 
 
-def write_tile(arg, folder):
+def write_tile(arg, folder, **write_to_kwargs):
     name, tile = arg
-    tile.write_to(os.path.join(folder, f"change-{name}.osm"))
+    filename = f"change-{name}.osm"
+    tile.write_to(os.path.join(folder, filename), source_file=name, **write_to_kwargs)
 
     warnings = tile.warnings
     if len(warnings):

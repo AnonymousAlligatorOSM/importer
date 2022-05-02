@@ -22,8 +22,14 @@ class ChangesetEmitter:
     def warnings(self):
         return list(self.get_warnings())
 
-    def write_to(self, path):
-        self._xml = etree.Element("osm", version="0.6", generator="AnonymousAlligator")
+    def write_to(self, path, generator=None, changeset_tags={}, source_file=None):
+        self._xml = etree.Element("osm", version="0.6", generator=generator)
+
+        for key, val in changeset_tags.items():
+            self._xml.append(etree.Element("changeset_tag", k=key, v=val))
+
+        if source_file:
+            self._xml.append(etree.Element("changeset_tag", k="source_file", v=source_file))
 
         for change in self.changes:
             change.emit_xml(self)
@@ -37,6 +43,12 @@ class ChangesetEmitter:
 
     def add_node(self, location, tags=None):
         location = Point(location)
+
+        rlon = int(float(location.x*10**7))
+        rlat = int(float(location.y*10**7))
+        if (rlon, rlat) in self._nodes:
+            return self._nodes[(rlon, rlat)]
+
         id = self.get_id("node")
         node = etree.Element("node", visible="true", id=id)
         node.set('lat', str(Decimal(location.y)*Decimal(1)))
@@ -44,7 +56,7 @@ class ChangesetEmitter:
         if tags:
             for key, val in tags.items():
                 node.append(etree.Element('tag', k=key, v=val))
-        self._nodes[id] = node
+        self._nodes[(rlon, rlat)] = node
         self._xml.append(node)
         return node
 

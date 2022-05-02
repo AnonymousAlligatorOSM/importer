@@ -25,6 +25,12 @@ changesets via JOSM.
  - New building address doesn't match old one
 - Generate changesets by tile, split by passed/failed validation
 
+# Tips
+
+- You can list command line arguments in a file (such as `args.txt` and then
+invoke the script with `./importer.py @args.txt`). That way you don't forget
+what arguments you use!
+
 # Contributing
 
 If you want to use this script in an import, and you make any modifications,

@@ -2,15 +2,13 @@ import re
 import typing as T
 
 class Filter:
-    def __init__(self, files):
-        self._filter_codes = []
-        for file in files:
-            with open(file, "r") as f:
-                self._filter_codes += (
-                    line.strip()
-                    for line in f
-                    if not line.isspace() and not line.startswith("#")
-                )
+    def __init__(self, file):
+        with open(file, "r") as f:
+            self._filter_codes = [
+                line.strip()
+                for line in f
+                if not line.isspace() and not line.startswith("#")
+            ]
 
         self._filters = [_create_filter(code) for code in self._filter_codes]
 
@@ -31,6 +29,10 @@ def _create_filter(filter: str) -> T.Callable[[str], str]:
     match filter:
         case "title_case":
             return str.title
+        case "round2":
+            return lambda x: round(x, 2)
+        case "str":
+            return str
         case _:
             segments = filter.split(" => ")
             if len(segments) != 2:

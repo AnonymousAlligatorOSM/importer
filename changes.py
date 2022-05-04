@@ -181,20 +181,28 @@ class UpdateBuildingAddressChange(Change):
 
     def get_warnings(self) -> T.Iterator[str]:
         yield from self.address.warnings
-        street = self.osm_element["tags"].get("addr:street")
-        housenumber = self.osm_element["tags"].get("addr:housenumber")
-        if "addr:street" in self.osm_element["tags"] or "addr:housenumer" in self.osm_element["tags"]:
-            if (street != self.address.tags.get("addr:street") or housenumber != self.address.tags.get("addr:housenumber")):
-                yield f"new building address ({self.address}) does not match the old one ({(housenumber, street)})"
 
+        for tag, val in self.address.tags.items():
+            if tag in self.osm_element["tags"] and self.osm_element["tags"][tag] != val:
+                yield f"new building tag ({tag}={val}) does not match the old one ({tag}={self.osm_element['tags'][tag]})"
 
     @property
     def location(self):
         return self.address.location
 
     def emit_xml(self, ctx: ChangesetEmitter):
-        element = etree.Element(self.osm_element["type"], id=str(self.osm_element["id"]), version=str(self.osm_element["version"]))
-        for key, val in self.address.tags.items():
+        element = etree.Element(self.osm_element["type"], id=str(self.osm_element["id"]), version=str(self.osm_element["version"]), action="modify")
+
+        for key, val in { **self.osm_element["tags"], **self.address.tags }.items():
             element.append(etree.Element('tag', k=key, v=val))
+
+        if members := self.osm_element.get("members"):
+            for member in members:
+                element.append(etree.Element(member["type"], ref=str(member["ref"])))
+
+        if nodes := self.osm_element.get("nodes"):
+            for nodeid in nodes:
+                element.append(etree.Element("nd", ref=str(nodeid)))
+
         ctx.add_xml(element)
 

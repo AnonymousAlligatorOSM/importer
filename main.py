@@ -31,7 +31,7 @@ def main():
     args.add_argument("--map-building-tag", dest="building_tag_maps", action="append", default=[], help="mapping of <osm tag>=<shapefile property>")
     args.add_argument("--add-building-tag", dest="building_tags", action="append", default=[], help="mapping of <osm tag>=<shapefile property>")
 
-    args.add_argument("--tag-filters-file", dest="tag_filters", action="append", default=[], help="path to tag filters, one per line")
+    args.add_argument("--tag-filters", dest="tag_filters", action="append", default=[], help="pairs of tag,file where tag is the output tag to apply filter to and file is a file full of filters, one per line")
 
     if len(sys.argv) == 1:
         args.print_help()
@@ -39,7 +39,12 @@ def main():
 
     opts = args.parse_args()
 
-    tag_filter = Filter(opts.tag_filters)
+    tag_filters = {}
+    for tag_filter in opts.tag_filters:
+        tag, path = tag_filter.split(",", 1)
+        if tag in tag_filters:
+            raise ValueError(f"Filter file already specified for {tag}")
+        tag_filters[tag] = Filter(path)
 
     addresses = []
     buildings = []
@@ -56,7 +61,7 @@ def main():
             address_tag_maps = [(tag.split("=", 1)[0], tag.split("=", 1)[1]) for tag in opts.address_tag_maps]
             with collection(opts.addresses, "r") as shapefile:
                 with Pool(opts.jobs) as p:
-                    addresses = list(p.imap_unordered(PoolFunc(Address, address_tags, address_tag_maps, tag_filter), shapefile, chunksize=1024))
+                    addresses = list(p.imap_unordered(PoolFunc(Address, address_tags, address_tag_maps, tag_filters), shapefile, chunksize=1024))
             points = MultiPoint([*points.geoms, *[address.location for address in addresses]])
 
     if opts.buildings:
@@ -65,7 +70,7 @@ def main():
             building_tag_maps = [(tag.split("=", 1)[0], tag.split("=", 1)[1]) for tag in opts.building_tag_maps]
             with collection(opts.buildings, "r") as shapefile:
                 with Pool(opts.jobs) as p:
-                    buildings = list(p.imap_unordered(PoolFunc(Building, building_tags, building_tag_maps, tag_filter), shapefile, chunksize=1024))
+                    buildings = list(p.imap_unordered(PoolFunc(Building, building_tags, building_tag_maps, tag_filters), shapefile, chunksize=1024))
             points = MultiPoint([*points.geoms, *[building.location for building in buildings]])
 
     with section("Downloading existing data"):

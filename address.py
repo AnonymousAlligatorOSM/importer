@@ -3,7 +3,7 @@ import typing as T
 from shapely.geometry import shape, Point
 
 class Address:
-    def __init__(self, data, tags: T.Dict[str, str], tag_maps: T.List[T.Tuple[str, str]] = [], tag_filter=None):
+    def __init__(self, data, tags: T.Dict[str, str], tag_maps: T.List[T.Tuple[str, str]] = [], tag_filters={}):
         self._location = shape(data["geometry"])
         if not isinstance(self._location, Point):
             raise ValueError(f"Expected point geometry (got {self._location})")
@@ -11,7 +11,9 @@ class Address:
         self._tags = {**tags}
         for map_to, map_from in tag_maps:
             if prop := data["properties"].get(map_from):
-                self._tags[map_to] = tag_filter(prop)
+                if tag_filter := tag_filters.get(map_to):
+                    prop = tag_filter(prop)
+                self._tags[map_to] = prop
 
         self._no_nearby_street_warning = None
 

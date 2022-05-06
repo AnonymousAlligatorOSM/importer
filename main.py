@@ -85,7 +85,7 @@ def main():
                 existing_addresses = { name: MultiPoint(points) for name, points in existing_addresses.items() }
 
         with section("  Downloading existing buildings from overpass"):
-            existing_building_result = overpass_query(f'[out:json][timeout:120]; ( way["building"="yes"](poly:"{poly}"); relation["building"="yes"](poly:"{poly}"); ); out meta geom;')
+            existing_building_result = overpass_query(f'[out:json][timeout:120]; ( way["building"](poly:"{poly}"); relation["building"](poly:"{poly}"); ); out meta geom;')
             with section("    Processing buildings"):
                 existing_buildings = [
                     ExistingBuilding(overpass_to_geom(element), element) for element in existing_building_result['elements']

@@ -27,7 +27,7 @@ class Address:
 
     @property
     def address_tuple(self) -> T.Tuple[str, str]:
-        return (self.tags.get("addr:housenumber"), self.tags.get("addr:street"))
+        return (self.tags.get("unit"), self.tags.get("addr:housenumber"), self.tags.get("addr:street"))
 
     @property
     def warnings(self) -> T.Iterator[str]:

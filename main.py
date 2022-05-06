@@ -81,7 +81,7 @@ def main():
             with section("    Processing addresses"):
                 existing_addresses = defaultdict(list)
                 for element in existing_address_result['elements']:
-                    existing_addresses[(element['tags'].get('addr:housenumber'), element['tags'].get('addr:street'))].append(overpass_to_geom(element))
+                    existing_addresses[(element['tags'].get('addr:unit'), element['tags'].get('addr:housenumber'), element['tags'].get('addr:street'))].append(overpass_to_geom(element))
                 existing_addresses = { name: MultiPoint(points) for name, points in existing_addresses.items() }
 
         with section("  Downloading existing buildings from overpass"):
@@ -120,13 +120,13 @@ def main():
     with section("Removing input buildings that already exist in OSM"):
         prev_len = len(buildings)
 
-        def intersects(bldg):
+        def does_not_intersect(bldg):
             for i in existing_bldg_idx.intersection(bldg.shape.bounds):
                 if existing_buildings[i].shape.intersects(bldg.shape):
                     return False
             return True
 
-        buildings = list(filter(intersects, buildings))
+        buildings = list(filter(does_not_intersect, buildings))
 
         print(f"  Removed {prev_len - len(buildings)} buildings")
 

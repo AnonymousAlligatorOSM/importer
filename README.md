@@ -36,3 +36,8 @@ what arguments you use!
 If you want to use this script in an import, and you make any modifications,
 feel free to submit them as a pull request. That way everyone can benefit from
 a better import script.
+
+# Acknowledgements
+
+Some of this code, particularly the XML generator, is based on the
+NOLA import code: <https://github.com/mtoupsUNO/nola-buildings>

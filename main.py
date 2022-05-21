@@ -203,7 +203,7 @@ def main():
 def write_tile(arg, folder, **write_to_kwargs):
     name, tile = arg
     filename = f"change-{name}.osm"
-    tile.write_to(os.path.join(folder, filename), source_file=name, **write_to_kwargs)
+    tile.write_to(os.path.join(folder, filename), source_file=filename, **write_to_kwargs)
 
     warnings = tile.warnings
     if len(warnings):

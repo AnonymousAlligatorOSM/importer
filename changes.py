@@ -23,13 +23,17 @@ class ChangesetEmitter:
         return list(self.get_warnings())
 
     def write_to(self, path, generator=None, changeset_tags={}, source_file=None):
-        self._xml = etree.Element("osm", version="0.6", generator=generator)
+        self._xml = etree.Element("osm", version="0.6", generator=generator, **{"upload-changeset": "-1"})
+
+        changeset = etree.Element("changeset", id="-1")
 
         for key, val in changeset_tags.items():
-            self._xml.append(etree.Element("changeset_tag", k=key, v=val))
+            changeset.append(etree.Element("tag", k=key, v=val))
 
         if source_file:
-            self._xml.append(etree.Element("changeset_tag", k="source_file", v=source_file))
+            changeset.append(etree.Element("tag", k="source_file", v=source_file))
+
+        self._xml.append(changeset)
 
         for change in self.changes:
             change.emit_xml(self)
